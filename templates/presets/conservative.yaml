@@ -1,0 +1,26 @@
+# Conservative Preset
+# Lower risk settings for capital preservation
+
+sizing:
+  mode: percent
+  percent_per_trade: 1.0
+  max_positions: 1
+
+leverage:
+  enabled: true
+  default: 3
+  max: 5
+
+risk:
+  stop_loss:
+    enabled: true
+    mode: percent
+    percent: 0.5
+  take_profit:
+    enabled: true
+    mode: percent
+    percent: 1.0
+  trailing_stop:
+    enabled: true
+    activation: 0.5
+    distance: 0.3

@@ -1,0 +1,36 @@
+# CBT Framework State
+# Strategy: {strategy_name}
+# DO NOT EDIT MANUALLY - managed by CBT Framework
+
+strategy: {strategy_name}
+created: {date}
+last_updated: {date}
+
+# Current phase in workflow
+phase: discovery  # discovery | research | config | build | iterate
+
+# Phase completion tracking
+phases_completed:
+  discovery: false
+  research: false
+  config: false
+  build: false
+
+# Build process tracking
+build:
+  plan: []
+  current_step: null
+  progress: "0/0"
+
+# Experiment tracking
+experiments:
+  count: 0
+  current: null
+  best: null
+  baseline_sharpe: null
+
+# Pending observations to test
+pending_observations: []
+
+# Iteration history
+iterations: []

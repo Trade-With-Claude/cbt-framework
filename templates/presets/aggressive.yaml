@@ -1,0 +1,24 @@
+# Aggressive Preset
+# Higher risk settings for maximum returns
+
+sizing:
+  mode: percent
+  percent_per_trade: 5.0
+  max_positions: 5
+
+leverage:
+  enabled: true
+  default: 20
+  max: 50
+
+risk:
+  stop_loss:
+    enabled: true
+    mode: percent
+    percent: 2.0
+  take_profit:
+    enabled: true
+    mode: percent
+    percent: 5.0
+  trailing_stop:
+    enabled: false

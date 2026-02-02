@@ -1,0 +1,41 @@
+{
+  "name": "cbt-framework",
+  "version": "1.0.0",
+  "description": "Claude Backtest Framework - A structured backtesting workflow for trading strategies with Claude Code",
+  "author": "TradeWithAI",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TradeWithAI/cbt-framework.git"
+  },
+  "homepage": "https://github.com/TradeWithAI/cbt-framework#readme",
+  "bugs": {
+    "url": "https://github.com/TradeWithAI/cbt-framework/issues"
+  },
+  "keywords": [
+    "backtesting",
+    "trading",
+    "quant",
+    "strategy",
+    "claude",
+    "claude-code",
+    "ai",
+    "algorithmic-trading"
+  ],
+  "bin": {
+    "cbt-framework": "./bin/cbt-init.js"
+  },
+  "files": [
+    "bin/",
+    "commands/",
+    "agents/",
+    "templates/",
+    "references/",
+    "workflows/",
+    "hooks/",
+    "engine/"
+  ],
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

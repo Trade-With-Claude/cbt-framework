@@ -1,0 +1,28 @@
+# Automated npm publish on release
+# When you create a new release/tag on GitHub, this automatically publishes to npm
+
+name: Publish to npm
+
+on:
+  release:
+    types: [published]
+  # Also allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Publish to npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

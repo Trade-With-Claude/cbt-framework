@@ -1,0 +1,16 @@
+# Binance Futures Preset
+# Standard fees and settings for Binance USDT-M Futures
+
+fees:
+  maker: 0.02  # 0.02%
+  taker: 0.04  # 0.04%
+  slippage: 0.01
+
+leverage:
+  enabled: true
+  default: 10
+  max: 125
+
+execution:
+  entry_type: market
+  exit_type: market
