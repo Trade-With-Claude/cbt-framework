@@ -12,6 +12,7 @@ allowed-tools:
 <objective>
 Conduct a structured discovery session to fully understand the trading strategy through targeted questions.
 Output a comprehensive DISCOVERY.md that captures the hypothesis, entry/exit logic, data requirements, and build plan.
+Engine-aware: detects data scale and recommends fast engine if needed.
 </objective>
 
 <execution_context>
@@ -33,6 +34,7 @@ Output a comprehensive DISCOVERY.md that captures the hypothesis, entry/exit log
 
 Locate the strategy folder by finding .cbt/state.yaml.
 Read current state to verify we're in discovery phase.
+Note the `engine` and `mode` from state.
 
 ## 2. Check for IDEA.md
 
@@ -66,6 +68,21 @@ Ask questions in groups (2-3 at a time max). Use AskUserQuestion tool.
 - "What results would prove this strategy works? (Sharpe > X, win rate > Y)"
 - "What would make you abandon this strategy?"
 
+### Group 6: Data Scale & Project Type
+- "How large is your dataset?" → Options:
+  - **Small** (<1M rows) - Standard pandas will work fine
+  - **Medium** (1-50M rows) - Consider fast engine for speed
+  - **Large** (>50M rows) - Fast engine strongly recommended
+- "What type of project is this?" → Options:
+  - **Indicator/OHLCV-based** - Entry/exit based on technical indicators and price action
+  - **ML-based** - Machine learning model for predictions or classification
+  - **Hybrid** - Combines indicators with ML components
+
+**Engine recommendation logic:**
+- If dataset is medium/large AND engine is currently `pandas`, recommend switching to fast:
+  "Your dataset is {size}. The fast engine (Polars + NumPy + Numba) would give significant speedups. Want to switch?"
+- If user agrees, update state.yaml `engine: fast` and config.yaml `engine.type: fast`
+
 ## 4. Assess Complexity
 
 Based on answers, determine build complexity:
@@ -94,6 +111,8 @@ Create comprehensive document:
 
 **Date:** {date}
 **Phase:** Discovery Complete
+**Engine:** {pandas / fast}
+**Project Type:** {indicator / ml / hybrid}
 
 ---
 
@@ -138,10 +157,15 @@ Create comprehensive document:
 
 ## Data Requirements
 
-| Dataset | Resolution | Source | Status |
-|---------|------------|--------|--------|
-| {data1} | {timeframe} | {source} | [ ] Have / [ ] Need |
-| {data2} | {timeframe} | {source} | [ ] Have / [ ] Need |
+| Dataset | Resolution | Source | Size Estimate | Status |
+|---------|------------|--------|---------------|--------|
+| {data1} | {timeframe} | {source} | {rows} | [ ] Have / [ ] Need |
+| {data2} | {timeframe} | {source} | {rows} | [ ] Have / [ ] Need |
+
+### Data Scale
+- **Estimated rows:** {estimate}
+- **Engine:** {pandas / fast}
+- **Rationale:** {why this engine was chosen}
 
 ### Data Validation Checklist
 - [ ] No gaps in timestamps
@@ -222,8 +246,8 @@ Update .cbt/state.yaml:
 phase: research  # or config if skipping research
 phases_completed:
   discovery: true
-build:
-  plan: {generated build plan}
+project_type: {indicator|ml|hybrid}
+engine: {pandas|fast}  # if changed during discovery
 ```
 
 ## 8. Output Summary
@@ -236,13 +260,15 @@ Updated: Data/README.md
 
 Strategy Summary:
 - Type: {Simple/Medium/Complex}
+- Project: {indicator / ml / hybrid}
+- Engine: {pandas / fast}
 - Entry: {brief description}
 - Exit: {brief description}
 - Data needed: {list}
 
 Build Plan: {N} steps
 
-Next: /cbt:research (recommended) or /cbt:config (skip research)
+Next: /cbt:eda (recommended) or /cbt:research
 ```
 
 </process>
@@ -253,13 +279,15 @@ Next: /cbt:research (recommended) or /cbt:config (skip research)
 - DO challenge vague or weak hypotheses
 - DO suggest simpler approaches if strategy is over-engineered
 - DO be honest about data complexity
+- DO recommend fast engine for large datasets
 </constraints>
 
 <success_criteria>
-- [ ] All question groups answered
-- [ ] DISCOVERY.md created with all sections
+- [ ] All question groups answered (including Group 6: Data Scale)
+- [ ] DISCOVERY.md created with all sections (including engine + project_type)
 - [ ] Build plan generated based on complexity
-- [ ] Data requirements documented
+- [ ] Data requirements documented with scale estimate
+- [ ] Engine recommendation made if applicable
 - [ ] Success/kill criteria defined
-- [ ] State updated to next phase
+- [ ] State updated to next phase with project_type
 </success_criteria>

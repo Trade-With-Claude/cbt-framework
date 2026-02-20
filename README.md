@@ -1,20 +1,28 @@
 # CBT Framework
 
-> **Claude Backtest Framework** - A structured backtesting workflow for trading strategies with Claude Code
+> **Claude Backtest Framework** - A full strategy lifecycle framework for trading with Claude Code
 
 [![npm version](https://badge.fury.io/js/cbt-framework.svg)](https://badge.fury.io/js/cbt-framework)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-CBT Framework is a comprehensive toolkit that brings structure and discipline to trading strategy development. It integrates directly with [Claude Code](https://claude.ai/claude-code) to provide an AI-assisted workflow for building, testing, and iterating on trading strategies.
+CBT Framework brings structure and discipline to trading strategy development. From initial idea to live deployment, it provides an AI-assisted workflow for building, testing, optimizing, and deploying trading strategies with [Claude Code](https://claude.ai/claude-code).
 
 ## Features
 
 - **Structured Discovery** - Define your strategy through guided Q&A
 - **Deep Research** - Validate hypotheses with literature and implementation research
-- **From-Scratch Engine** - Pure Python backtesting with no external dependencies
-- **Experiment Tracking** - Every backtest run is tracked and comparable
-- **Iteration Workflow** - Systematic approach to strategy improvement
-- **State Persistence** - Pick up exactly where you left off
+- **EDA with Seaborn** - Pre-backtest exploratory data analysis with visualizations
+- **Build Planning** - Step-by-step build plans before coding
+- **Dual Engine** - pandas (standard) or fast engine (Polars + NumPy + Numba)
+- **Deep Analysis** - Post-backtest forensic analysis with statistical tests
+- **Signal Plotting** - Visualize signals on candlestick charts with mplfinance
+- **Parameter Optimization** - Sweep, grid search, walk-forward optimization
+- **Live Deployment** - Deploy to Bybit, Kraken, Binance, or Hyperliquid
+- **Notifications** - Discord, Telegram, SMS, Email alerts
+- **Standalone Export** - Package for sharing or Raspberry Pi deployment
+- **Living Reports** - Auto-populated project documentation
+- **YOLO Mode** - Auto-approve steps for maximum speed
+- **Context Handoff** - Resume seamlessly after clearing conversation
 
 ## Installation
 
@@ -22,13 +30,63 @@ CBT Framework is a comprehensive toolkit that brings structure and discipline to
 npx cbt-framework
 ```
 
-This will install the CBT Framework commands into your Claude Code environment.
+This installs 21 commands, 4 agents, templates, and references into your Claude Code environment.
 
 ### Requirements
 
 - [Claude Code](https://claude.ai/claude-code) CLI
 - Node.js 16+
 - Python 3.8+ (for strategy execution)
+
+### Optional (for fast engine)
+```bash
+pip install polars numba numpy
+```
+
+## Workflow
+
+```
+/cbt:new (+ YOLO mode + engine choice)
+    │
+    ▼
+/cbt:discover (+ data scale + project type)
+    │
+    ▼
+/cbt:research
+    │
+    ▼
+/cbt:eda (pre-backtest data analysis with Seaborn)
+    │
+    ▼
+/cbt:config
+    │
+    ▼
+/cbt:plan (step-by-step build plan)
+    │
+    ▼
+/cbt:build (follows plan, uses chosen engine)
+    │
+    ▼
+/cbt:run
+    │
+    ├──→ /cbt:deep-analyze (forensic analysis)
+    ├──→ /cbt:plot (signal visualization)
+    ├──→ /cbt:analyze (quick analysis)
+    │
+    ▼
+/cbt:optimize (structured optimization)
+    │
+    ▼
+/cbt:iterate (loop)
+    │
+    ▼
+/cbt:report (living document)
+    │
+    ├──→ /cbt:export (standalone package)
+    └──→ /cbt:live (deploy bot)
+
+/cbt:clear - save context + reset anytime
+```
 
 ## Quick Start
 
@@ -38,14 +96,7 @@ This will install the CBT Framework commands into your Claude Code environment.
 /cbt:new my_strategy
 ```
 
-This creates the folder structure:
-```
-strategies/my_strategy/
-├── Data/               # Place your datasets here
-├── IDEA.md            # Initial thoughts
-├── config.yaml        # Backtest parameters
-└── .cbt/state.yaml    # Framework state
-```
+Choose your workflow mode (Interactive or YOLO) and computing engine (pandas or fast).
 
 ### 2. Discover Your Strategy
 
@@ -53,13 +104,7 @@ strategies/my_strategy/
 /cbt:discover
 ```
 
-Answer questions about:
-- What edge are you exploiting?
-- Entry and exit conditions
-- Data requirements
-- Success criteria
-
-Output: `DISCOVERY.md` with complete strategy specification
+Answer questions about your edge, entry/exit conditions, data requirements, and success criteria.
 
 ### 3. Research and Validate
 
@@ -67,216 +112,153 @@ Output: `DISCOVERY.md` with complete strategy specification
 /cbt:research
 ```
 
-Searches for:
-- Academic papers supporting your hypothesis
-- Existing implementations on GitHub
-- Known risks and pitfalls
+### 4. Explore Your Data
 
-Output: `RESEARCH.md` with findings and recommendations
+```
+/cbt:eda
+```
 
-### 4. Configure Backtest Parameters
+Statistical analysis with Seaborn visualizations: distributions, correlations, seasonality, volatility regimes.
+
+### 5. Configure and Plan
 
 ```
 /cbt:config
+/cbt:plan
 ```
 
-Set up:
-- Initial capital
-- Position sizing
-- Leverage settings
-- Stop loss / take profit
-- Fees and slippage
-
-Or use a preset:
-```
-/cbt:config preset binance_futures
-```
-
-### 5. Build Your Strategy
+### 6. Build
 
 ```
 /cbt:build
 ```
 
-Generates:
-- `src/data_loader.py` - Data loading and validation
-- `src/features.py` - Feature engineering (with lookahead prevention)
-- `src/signals.py` - Signal generation
-- `strategy.py` - Main strategy class
-- `backtest.py` - Backtest runner
+Generates strategy code following the build plan, using the chosen engine.
 
-### 6. Run and Iterate
+### 7. Run, Analyze, Optimize
 
 ```
 /cbt:run
-```
-
-Execute backtest and save results to `experiments/`.
-
-```
+/cbt:deep-analyze
+/cbt:optimize
 /cbt:iterate
 ```
 
-Enter the optimization loop:
-1. Analyze results
-2. Record observations
-3. Apply changes
-4. Run again
-5. Compare and decide
-
-## Workflow Overview
+### 8. Report, Deploy, Export
 
 ```
-┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
-│ DISCOVER │───▶│ RESEARCH │───▶│  CONFIG  │───▶│  BUILD   │───▶│ ITERATE  │
-│          │    │          │    │          │    │          │    │          │
-│ Define   │    │ Validate │    │ Set      │    │ Generate │    │ Optimize │
-│ strategy │    │ edge     │    │ params   │    │ code     │    │ loop     │
-└──────────┘    └──────────┘    └──────────┘    └──────────┘    └──────────┘
+/cbt:report        # Living project report
+/cbt:live          # Deploy to exchange
+/cbt:export --zip  # Standalone package
 ```
 
 ## Commands Reference
 
-### Setup Commands
-
+### Setup (4)
 | Command | Description |
 |---------|-------------|
-| `/cbt:new <name>` | Create new strategy |
-| `/cbt:status` | Show current state |
-| `/cbt:help` | Show all commands |
+| `/cbt:new <name>` | Create strategy (YOLO mode + engine choice) |
+| `/cbt:status` | Show state, mode, engine, progress |
+| `/cbt:help` | Show all 21 commands |
+| `/cbt:clear` | Save handoff context + reset |
 
-### Workflow Commands
-
+### Workflow (8)
 | Command | Description |
 |---------|-------------|
-| `/cbt:discover` | Define strategy through Q&A |
-| `/cbt:research` | Deep research phase |
+| `/cbt:discover` | Strategy Q&A + data scale + project type |
+| `/cbt:research` | Literature, implementations, risks |
+| `/cbt:eda` | Exploratory data analysis with Seaborn |
 | `/cbt:config` | Configure backtest parameters |
-| `/cbt:build` | Generate strategy code |
+| `/cbt:plan` | Create step-by-step build plan |
+| `/cbt:build` | Generate code (plan-aware, engine-aware) |
 | `/cbt:run` | Execute backtest |
-| `/cbt:analyze` | Deep analysis of results |
-| `/cbt:iterate` | Guided optimization loop |
-| `/cbt:compare` | Compare experiments |
-| `/cbt:observe` | Save observation |
+| `/cbt:iterate` | Guided one-change-at-a-time loop |
 
-### Utility Commands
-
+### Analysis (4)
 | Command | Description |
 |---------|-------------|
-| `/cbt:config show` | Display current config |
-| `/cbt:config preset <name>` | Load preset |
-| `/cbt:build status` | Show build progress |
-| `/cbt:update` | Update framework |
+| `/cbt:analyze` | Quick text-based analysis |
+| `/cbt:deep-analyze` | Forensic analysis with Seaborn plots |
+| `/cbt:plot` | Signal/indicator/equity visualization |
+| `/cbt:compare` | Compare experiments |
 
-## Configuration
+### Optimization & Tracking (3)
+| Command | Description |
+|---------|-------------|
+| `/cbt:optimize` | Parameter sweep, grid, walk-forward |
+| `/cbt:observe` | Save observations |
+| `/cbt:report` | Living project report |
 
-### Config File Structure
+### Deployment (2)
+| Command | Description |
+|---------|-------------|
+| `/cbt:live` | Deploy as live bot (4 exchanges) |
+| `/cbt:export` | Standalone package + Docker |
 
-```yaml
-account:
-  initial_capital: 10000
-  currency: USD
+## Engines
 
-sizing:
-  mode: percent        # percent | fixed | kelly
-  percent_per_trade: 2.0
-  max_positions: 3
+### pandas (default)
+Standard pandas + numpy. Best for datasets under 1M rows. Simple, debuggable, familiar.
 
-leverage:
-  enabled: true
-  default: 5
-  max: 20
+### Fast (Polars + NumPy + Numba)
+For large datasets (1M+ rows):
+- **Polars** for data loading (lazy evaluation, zero-copy)
+- **NumPy** arrays for feature engineering
+- **Numba** @njit for compiled backtest loops
+- No pandas in the hot path
 
-risk:
-  stop_loss:
-    enabled: true
-    mode: percent      # percent | atr | fixed
-    percent: 1.0
-  take_profit:
-    enabled: true
-    mode: percent
-    percent: 2.0
-  trailing_stop:
-    enabled: false
+## Live Trading
 
-fees:
-  maker: 0.02
-  taker: 0.04
-  slippage: 0.01
-```
+### Supported Exchanges
+- **Bybit** - USDT perpetuals, inverse, spot
+- **Kraken** - Spot, futures
+- **Binance** - Spot, USDT-M, COIN-M futures
+- **Hyperliquid** - Decentralized perpetuals
 
-### Available Presets
+### Safety Features
+- Paper trading mode by default
+- Kill switch with configurable drawdown threshold
+- Max position size limits
+- API rate limiting
+- Credentials in .env (never hardcoded)
 
-- `binance_futures` - Binance USDT-M Futures fees
-- `binance_spot` - Binance spot trading
-- `conservative` - Lower risk settings
-- `aggressive` - Higher risk settings
-
-## Backtest Engine
-
-CBT includes a pure Python backtest engine with:
-
-- **Realistic Execution**
-  - Maker/taker fee modeling
-  - Slippage simulation
-  - Position sizing
-
-- **Risk Management**
-  - Stop loss (percent, ATR, fixed)
-  - Take profit (percent, R:R ratio, fixed)
-  - Trailing stops
-
-- **Metrics**
-  - Sharpe & Sortino ratios
-  - Max drawdown & duration
-  - Win rate & profit factor
-  - Trade analysis
-
-### No External Dependencies
-
-The backtest engine is built from scratch using only:
-- `pandas` - Data manipulation
-- `numpy` - Numerical operations
-- `PyYAML` - Config parsing
-
-No `backtrader`, `zipline`, or other backtesting libraries required.
+### Notifications
+- Discord (webhook)
+- Telegram (bot API)
+- SMS (Twilio)
+- Email (SMTP)
 
 ## Project Structure
 
 ```
 strategies/<name>/
-├── Data/
-│   ├── README.md           # Data requirements
-│   └── *.csv / *.parquet   # Your datasets
-├── src/
-│   ├── data_loader.py      # Data loading
-│   ├── features.py         # Feature engineering
-│   └── signals.py          # Signal generation
-├── experiments/
-│   ├── baseline.yaml       # First run
-│   └── exp_001.yaml        # Iterations
-├── observations/
-│   └── *.md                # Iteration notes
-├── checkpoints/
-│   └── *.parquet           # Cached features
-├── trades/
-│   └── *.csv               # Trade logs
-├── IDEA.md                 # Initial notes
-├── DISCOVERY.md            # Strategy spec
-├── RESEARCH.md             # Research findings
-├── config.yaml             # Backtest config
-├── strategy.py             # Main strategy
-├── backtest.py             # Runner
+├── Data/               # Datasets
+├── IDEA.md            # Initial notes
+├── DISCOVERY.md       # Strategy spec
+├── RESEARCH.md        # Research findings
+├── EDA.md             # Exploratory analysis
+├── BUILD_PLAN.md      # Build steps
+├── REPORT.md          # Living report
+├── DEEP_ANALYSIS.md   # Forensic analysis
+├── config.yaml        # Backtest config
+├── src/               # Generated code
+├── strategy.py        # Main strategy
+├── backtest.py        # Runner
+├── experiments/       # Backtest runs
+├── observations/      # Iteration notes
+├── checkpoints/       # Cached data
+├── plots/             # Visualizations
+│   ├── eda/           # EDA plots
+│   └── deep_analyze/  # Analysis plots
+├── trades/            # Trade logs
 └── .cbt/
-    └── state.yaml          # Framework state
+    ├── state.yaml     # Framework state
+    └── handoff.md     # Session handoff
 ```
 
 ## Best Practices
 
 ### 1. Lookahead Prevention
-
-All features use `.shift(1)` to prevent lookahead bias:
-
 ```python
 # CORRECT
 df['sma'] = df['close'].rolling(20).mean().shift(1)
@@ -286,100 +268,55 @@ df['sma'] = df['close'].rolling(20).mean()
 ```
 
 ### 2. One Change Per Iteration
+When optimizing, change only one thing at a time.
 
-When optimizing, change only one thing at a time. This isolates the impact of each modification.
+### 3. Paper Trade First
+Always validate with paper trading before going live.
 
-### 3. Track Observations
-
-Use `/cbt:observe` to capture insights. This builds a knowledge base for your strategy.
-
-### 4. Compare to Baseline
-
-Always compare new experiments to the baseline. If you can't beat baseline, something is wrong.
+### 4. Use EDA
+Let the data inform your strategy before building.
 
 ### 5. Kill Bad Ideas Fast
-
-Define kill criteria upfront. If met, abandon the strategy and move on.
+Define kill criteria upfront. If met, abandon and move on.
 
 ## Example Session
 
 ```
 > /cbt:new btc_momentum
-
-Strategy 'btc_momentum' created!
-Next: /cbt:discover
+Mode: YOLO | Engine: fast
 
 > /cbt:discover
+Strategy defined. Type: indicator. Data: 5M rows.
+Engine recommendation: fast (confirmed)
 
-What is the core edge of this strategy?
-> Price momentum following large liquidation events
+> /cbt:eda
+12 plots generated. Key finding: strong hourly seasonality.
 
-What data do you need?
-> BTC price 1m, liquidation data 1m
-
-[... more questions ...]
-
-Discovery Complete!
-Created: DISCOVERY.md
-Next: /cbt:research
-
-> /cbt:research
-
-Searching academic literature...
-Found 12 relevant papers on liquidation cascades...
-
-Searching GitHub...
-Found 3 similar implementations...
-
-Research Complete!
-Created: RESEARCH.md
-Confidence: Medium
-Recommendation: Proceed with caution - edge may decay
-
-> /cbt:config preset binance_futures
-
-Loaded preset: binance_futures
-Next: /cbt:build
+> /cbt:plan
+Build plan: 6 steps (fast engine)
 
 > /cbt:build
+All steps complete. Baseline: Sharpe 1.45
 
-Building: data_pipeline ✓
-Building: features ✓
-Building: signals ✓
-Building: strategy ✓
-Running baseline...
+> /cbt:deep-analyze
+Monte Carlo 95%: positive. Rolling Sharpe: stable.
 
-Baseline Results:
-- Total Return: +23.4%
-- Sharpe Ratio: 1.45
-- Max Drawdown: -12.3%
+> /cbt:optimize walkforward
+IS Sharpe: 1.8, OOS Sharpe: 1.5. Risk: Low.
 
-> /cbt:iterate
+> /cbt:report
+REPORT.md updated with all findings.
 
-Analyzing exp_001...
-Suggestion: Add volatility filter - high vol hurts
+> /cbt:live setup
+Exchange: Bybit. Paper trading started.
 
-What's your observation?
-> Try ATR filter to reduce trades in high volatility
-
-Proposed change: Add ATR > 2x filter
-Apply? [Y]
-
-Running exp_002...
-Sharpe improved: 1.45 → 1.67
-
-Mark as new best? [Y]
+> /cbt:export --zip
+Standalone package: export_strategies/btc_momentum.zip
 ```
 
 ## Contributing
 
 Contributions are welcome! Please read our contributing guidelines before submitting PRs.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
 
 ## License
 

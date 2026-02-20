@@ -95,6 +95,32 @@ cat ~/.claude/cbt-framework/VERSION
 
 Confirm version updated.
 
+## 7. Check MCP Setup
+
+After updating, check if the user has MCP servers configured:
+
+```bash
+cat ~/.claude/.mcp.json 2>/dev/null || echo "none"
+```
+
+If no `.mcp.json` exists or it's missing servers, inform the user:
+
+```
+MCP Servers:
+CBT Framework supports 3 free MCP servers for enhanced data access:
+
+| Server | Purpose | Status |
+|--------|---------|--------|
+| Context7 | Library docs (pandas, ccxt...) | [Installed/Not installed] |
+| Alpha Vantage | Market data + macro (CPI, GDP) | [Installed/Not installed] |
+| FRED | 840,000+ economic time series | [Installed/Not installed] |
+
+To set up missing MCP servers, run this in your terminal (not in Claude):
+  npx cbt-framework@latest
+
+Or see: ~/.claude/cbt-framework/references/mcp-setup.md
+```
+
 </process>
 
 <success_criteria>

@@ -1,0 +1,10 @@
+# CBT Framework - Fast Engine Requirements
+# Install: pip install -r requirements.txt
+
+polars>=0.20.0
+numba>=0.59.0
+numpy>=1.24.0
+PyYAML>=6.0
+matplotlib>=3.7.0
+seaborn>=0.13.0
+mplfinance>=0.12.0

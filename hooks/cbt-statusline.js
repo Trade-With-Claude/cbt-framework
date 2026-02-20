@@ -3,6 +3,7 @@
 /**
  * CBT Framework Status Line
  * Shows current strategy status in Claude Code status bar.
+ * v1.2.0: Added YOLO indicator, engine indicator, live bot status.
  */
 
 const fs = require('fs');
@@ -54,7 +55,9 @@ function getPhaseEmoji(phase) {
   const emojis = {
     discovery: '🔍',
     research: '📚',
+    eda: '📊',
     config: '⚙️',
+    plan: '📋',
     build: '🔨',
     iterate: '🔄'
   };
@@ -69,6 +72,16 @@ function formatStatus(state) {
   // Strategy name
   if (state.strategy) {
     parts.push(`📈 ${state.strategy}`);
+  }
+
+  // YOLO mode indicator
+  if (state.mode === 'yolo') {
+    parts.push('⚡ YOLO');
+  }
+
+  // Engine indicator
+  if (state.engine === 'fast') {
+    parts.push('🚀 fast');
   }
 
   // Current phase with emoji
@@ -91,6 +104,17 @@ function formatStatus(state) {
   // Build progress (if in build phase)
   if (state.phase === 'build' && state.build && state.build.progress) {
     parts.push(`[${state.build.progress}]`);
+  }
+
+  // Live bot status
+  if (state.live && state.live.deployed) {
+    const liveMode = state.live.mode || 'paper';
+    const exchange = state.live.exchange || 'unknown';
+    if (liveMode === 'live') {
+      parts.push(`🟢 LIVE:${exchange}`);
+    } else {
+      parts.push(`🟡 paper:${exchange}`);
+    }
   }
 
   return parts.join(' | ');

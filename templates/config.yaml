@@ -6,6 +6,10 @@ account:
   initial_capital: 10000
   currency: USD
 
+# Computing engine
+engine:
+  type: pandas  # pandas | fast (Polars + NumPy + Numba)
+
 sizing:
   mode: percent  # percent | fixed | kelly
   percent_per_trade: 2.0
@@ -52,3 +56,33 @@ time:
 
 # Strategy-specific parameters (populated by /cbt:build)
 strategy_params: {}
+
+# Notification channels (populated by /cbt:live)
+notifications:
+  discord:
+    enabled: false
+    webhook_url: null  # Set in .env as DISCORD_WEBHOOK_URL
+  telegram:
+    enabled: false
+    bot_token: null    # Set in .env as TELEGRAM_BOT_TOKEN
+    chat_id: null      # Set in .env as TELEGRAM_CHAT_ID
+  sms:
+    enabled: false
+    provider: twilio   # twilio
+    # Credentials set in .env: TWILIO_SID, TWILIO_TOKEN, TWILIO_FROM, TWILIO_TO
+  email:
+    enabled: false
+    smtp_host: null
+    smtp_port: 587
+    # Credentials set in .env: EMAIL_USER, EMAIL_PASS, EMAIL_TO
+
+# Live trading configuration (populated by /cbt:live)
+live:
+  exchange: null       # bybit | kraken | binance | hyperliquid
+  mode: paper          # paper | live
+  api_key: null        # Set in .env as EXCHANGE_API_KEY
+  api_secret: null     # Set in .env as EXCHANGE_API_SECRET
+  subaccount: null     # Optional subaccount name
+  max_position_size: null  # Maximum position size limit
+  kill_switch: true    # Emergency stop on large drawdown
+  kill_switch_drawdown: 10.0  # % drawdown to trigger kill switch

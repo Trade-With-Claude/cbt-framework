@@ -6,14 +6,25 @@ strategy: {strategy_name}
 created: {date}
 last_updated: {date}
 
+# Workflow mode: interactive (confirm each step) | yolo (auto-approve)
+mode: interactive
+
+# Computing engine: pandas (standard) | fast (Polars + NumPy + Numba)
+engine: pandas
+
+# Project type: indicator | ml | hybrid
+project_type: null
+
 # Current phase in workflow
-phase: discovery  # discovery | research | config | build | iterate
+phase: discovery  # discovery | research | eda | config | plan | build | iterate
 
 # Phase completion tracking
 phases_completed:
   discovery: false
   research: false
+  eda: false
   config: false
+  plan: false
   build: false
 
 # Build process tracking
@@ -34,3 +45,12 @@ pending_observations: []
 
 # Iteration history
 iterations: []
+
+# Report file path (relative to strategy dir)
+report_file: null
+
+# Live deployment status
+live:
+  deployed: false
+  exchange: null
+  mode: null  # paper | live
