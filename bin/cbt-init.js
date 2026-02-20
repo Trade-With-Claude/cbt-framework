@@ -340,7 +340,7 @@ async function install() {
   log('    - Living reports', colors.dim);
   log('    - Context handoff (/cbt:clear)', colors.dim);
   log('\n  Documentation:', colors.bright);
-  log('    https://github.com/TradeWithAI/cbt-framework\n', colors.cyan);
+  log('    https://github.com/Trade-With-Claude/cbt-framework\n', colors.cyan);
 }
 
 function uninstall() {

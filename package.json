@@ -6,11 +6,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/TradeWithAI/cbt-framework.git"
+    "url": "git+https://github.com/Trade-With-Claude/cbt-framework.git"
   },
-  "homepage": "https://github.com/TradeWithAI/cbt-framework#readme",
+  "homepage": "https://github.com/Trade-With-Claude/cbt-framework#readme",
   "bugs": {
-    "url": "https://github.com/TradeWithAI/cbt-framework/issues"
+    "url": "https://github.com/Trade-With-Claude/cbt-framework/issues"
   },
   "keywords": [
     "backtesting",

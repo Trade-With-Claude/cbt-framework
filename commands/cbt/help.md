@@ -273,7 +273,7 @@ See full details: `~/.claude/cbt-framework/references/mcp-setup.md`
 
 ## Documentation
 
-https://github.com/TradeWithAI/cbt-framework
+https://github.com/Trade-With-Claude/cbt-framework
 
 ---
 
