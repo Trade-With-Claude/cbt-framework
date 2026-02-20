@@ -54,3 +54,8 @@ live:
   deployed: false
   exchange: null
   mode: null  # paper | live
+
+# Prop firm challenge tracking
+prop_firm:
+  enabled: false
+  account_type: personal          # personal | prop_firm

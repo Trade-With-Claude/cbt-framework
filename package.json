@@ -1,6 +1,6 @@
 {
   "name": "cbt-framework",
-  "version": "1.2.5",
+  "version": "1.3.0",
   "description": "Claude Backtest Framework - A structured backtesting workflow for trading strategies with Claude Code",
   "author": "TradeWithAI",
   "license": "MIT",

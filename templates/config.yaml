@@ -54,6 +54,16 @@ time:
   end_date: null    # YYYY-MM-DD or null for latest
   trading_hours: null  # e.g., "09:30-16:00" or null for 24/7
 
+# Prop Firm Challenge Rules (set during /cbt:discover)
+prop_firm:
+  enabled: false
+  phase: 1                        # 1 | 2
+  max_drawdown_percent: 10.0      # Fixed from initial capital
+  daily_loss_percent: 5.0         # From previous day equity
+  phase1_target_percent: 10.0
+  phase2_target_percent: 5.0
+  breach_action: halt             # halt trading on breach
+
 # Strategy-specific parameters (populated by /cbt:build)
 strategy_params: {}
 

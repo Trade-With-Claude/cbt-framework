@@ -32,9 +32,15 @@ def run_backtest_loop(
     taker_fee: float,
     slippage: float,
     max_positions: int,
+    # Prop firm parameters
+    pf_enabled: bool = False,
+    pf_max_drawdown_pct: float = 10.0,
+    pf_daily_loss_pct: float = 5.0,
+    pf_target_pct: float = 10.0,
+    day_indices: np.ndarray = np.empty(0, dtype=np.int64),  # bar indices where new day starts
 ) -> tuple:
     """
-    Numba-compiled backtest loop.
+    Numba-compiled backtest loop with prop firm challenge enforcement.
 
     Returns:
         equity_curve: float64 array of equity at each bar
@@ -45,6 +51,10 @@ def run_backtest_loop(
         trade_entry_prices: float64 array of entry prices
         trade_exit_prices: float64 array of exit prices
         num_trades: int64 number of trades executed
+        pf_breach_bar: int64 bar where breach occurred (-1 if none)
+        pf_breach_type: int64 (0=none, 1=max_drawdown, 2=daily_loss)
+        pf_target_bar: int64 bar where target reached (-1 if none)
+        pf_daily_loss_breach_count: int64 number of daily loss breach bars
     """
     n = len(close_prices)
 
@@ -70,36 +80,58 @@ def run_backtest_loop(
     take_profit = 0.0
     entry_bar = 0
 
+    # Prop firm state
+    pf_halted = False
+    pf_breach_bar = -1
+    pf_breach_type = 0  # 0=none, 1=max_drawdown, 2=daily_loss
+    pf_target_bar = -1
+    pf_prev_day_equity = initial_capital
+    pf_daily_loss_breach_count = 0
+    pf_next_day_idx = 0  # pointer into day_indices
+
     for i in range(n):
         current_price = close_prices[i]
+
+        # Prop firm: detect new day
+        if pf_enabled and len(day_indices) > 0:
+            if pf_next_day_idx < len(day_indices) and i == day_indices[pf_next_day_idx]:
+                # New day starts at this bar
+                if i > 0:
+                    pf_prev_day_equity = equity_curve[i - 1]
+                pf_next_day_idx += 1
 
         # Check exits first
         if in_position:
             exit_triggered = False
             exit_price = current_price
 
-            # Check stop loss
-            if stop_loss > 0:
-                if position_direction == 1 and low_prices[i] <= stop_loss:
-                    exit_price = stop_loss
-                    exit_triggered = True
-                elif position_direction == -1 and high_prices[i] >= stop_loss:
-                    exit_price = stop_loss
-                    exit_triggered = True
-
-            # Check take profit
-            if not exit_triggered and take_profit > 0:
-                if position_direction == 1 and high_prices[i] >= take_profit:
-                    exit_price = take_profit
-                    exit_triggered = True
-                elif position_direction == -1 and low_prices[i] <= take_profit:
-                    exit_price = take_profit
-                    exit_triggered = True
-
-            # Check signal reversal
-            if not exit_triggered and directions[i] != 0 and directions[i] != position_direction:
+            # Prop firm breach: force close
+            if pf_enabled and pf_halted:
                 exit_triggered = True
                 exit_price = current_price
+            else:
+                # Check stop loss
+                if stop_loss > 0:
+                    if position_direction == 1 and low_prices[i] <= stop_loss:
+                        exit_price = stop_loss
+                        exit_triggered = True
+                    elif position_direction == -1 and high_prices[i] >= stop_loss:
+                        exit_price = stop_loss
+                        exit_triggered = True
+
+                # Check take profit
+                if not exit_triggered and take_profit > 0:
+                    if position_direction == 1 and high_prices[i] >= take_profit:
+                        exit_price = take_profit
+                        exit_triggered = True
+                    elif position_direction == -1 and low_prices[i] <= take_profit:
+                        exit_price = take_profit
+                        exit_triggered = True
+
+                # Check signal reversal
+                if not exit_triggered and directions[i] != 0 and directions[i] != position_direction:
+                    exit_triggered = True
+                    exit_price = current_price
 
             if exit_triggered:
                 # Apply slippage
@@ -130,44 +162,70 @@ def run_backtest_loop(
                 trade_exit_prices[num_trades] = exit_price
                 num_trades += 1
 
-        # Check entries
-        if not in_position and directions[i] != 0 and confidences[i] > 0:
-            position_direction = int(directions[i])
-            risk_amount = equity * (percent_per_trade / 100) * leverage
+        # Check entries (skip if prop firm halted)
+        if not in_position and not (pf_enabled and pf_halted):
+            if directions[i] != 0 and confidences[i] > 0:
+                position_direction = int(directions[i])
+                risk_amount = equity * (percent_per_trade / 100) * leverage
 
-            # Apply slippage to entry
-            if position_direction == 1:
-                entry_price = current_price * (1 + slippage / 100)
-            else:
-                entry_price = current_price * (1 - slippage / 100)
-
-            position_size = risk_amount / entry_price
-
-            # Subtract entry fee
-            fee = position_size * entry_price * (taker_fee / 100)
-            equity -= fee
-
-            # Set stop loss and take profit
-            if stop_loss_pct > 0:
+                # Apply slippage to entry
                 if position_direction == 1:
-                    stop_loss = entry_price * (1 - stop_loss_pct / 100)
+                    entry_price = current_price * (1 + slippage / 100)
                 else:
-                    stop_loss = entry_price * (1 + stop_loss_pct / 100)
-            else:
-                stop_loss = 0.0
+                    entry_price = current_price * (1 - slippage / 100)
 
-            if take_profit_pct > 0:
-                if position_direction == 1:
-                    take_profit = entry_price * (1 + take_profit_pct / 100)
+                position_size = risk_amount / entry_price
+
+                # Subtract entry fee
+                fee = position_size * entry_price * (taker_fee / 100)
+                equity -= fee
+
+                # Set stop loss and take profit
+                if stop_loss_pct > 0:
+                    if position_direction == 1:
+                        stop_loss = entry_price * (1 - stop_loss_pct / 100)
+                    else:
+                        stop_loss = entry_price * (1 + stop_loss_pct / 100)
                 else:
-                    take_profit = entry_price * (1 - take_profit_pct / 100)
-            else:
-                take_profit = 0.0
+                    stop_loss = 0.0
 
-            entry_bar = i
-            in_position = True
+                if take_profit_pct > 0:
+                    if position_direction == 1:
+                        take_profit = entry_price * (1 + take_profit_pct / 100)
+                    else:
+                        take_profit = entry_price * (1 - take_profit_pct / 100)
+                else:
+                    take_profit = 0.0
+
+                entry_bar = i
+                in_position = True
 
         equity_curve[i] = equity
+
+        # Prop firm: check breaches after equity update
+        if pf_enabled and not pf_halted:
+            # Max drawdown from initial capital
+            dd_from_initial = (equity - initial_capital) / initial_capital * 100.0
+            if dd_from_initial <= -pf_max_drawdown_pct:
+                pf_halted = True
+                pf_breach_bar = i
+                pf_breach_type = 1
+
+            # Daily loss from previous day equity
+            if pf_prev_day_equity > 0:
+                daily_loss = (equity - pf_prev_day_equity) / pf_prev_day_equity * 100.0
+                if daily_loss <= -pf_daily_loss_pct:
+                    pf_daily_loss_breach_count += 1
+                    if not pf_halted:
+                        pf_halted = True
+                        pf_breach_bar = i
+                        pf_breach_type = 2
+
+            # Target reached
+            if pf_target_bar == -1:
+                profit_pct = (equity - initial_capital) / initial_capital * 100.0
+                if profit_pct >= pf_target_pct:
+                    pf_target_bar = i
 
     return (
         equity_curve,
@@ -178,6 +236,10 @@ def run_backtest_loop(
         trade_entry_prices[:num_trades],
         trade_exit_prices[:num_trades],
         num_trades,
+        pf_breach_bar,
+        pf_breach_type,
+        pf_target_bar,
+        pf_daily_loss_breach_count,
     )
 
 
@@ -204,6 +266,14 @@ class BacktestResults:
     trade_entries: np.ndarray
     trade_exits: np.ndarray
     trade_directions: np.ndarray
+    # Prop firm fields (None if not enabled)
+    prop_firm_compliant: bool = None
+    prop_firm_breach_bar: int = None
+    prop_firm_breach_type: int = None  # 0=none, 1=max_dd, 2=daily_loss
+    prop_firm_target_bar: int = None
+    prop_firm_target_reached: bool = None
+    prop_firm_daily_loss_breach_count: int = None
+    prop_firm_max_dd_from_initial: float = None
 
 
 class FastBacktestEngine:
@@ -219,6 +289,7 @@ class FastBacktestEngine:
 
         Args:
             backtest_arrays: Dict from FastStrategy.get_backtest_arrays()
+                Optional key 'day_indices': int64 array of bar indices where new days start
 
         Returns:
             BacktestResults with all metrics
@@ -235,6 +306,15 @@ class FastBacktestEngine:
         taker_fee = config['fees']['taker']
         slippage = config['fees']['slippage']
         max_positions = config['sizing']['max_positions']
+
+        # Prop firm parameters
+        pf = config.get('prop_firm', {})
+        pf_enabled = pf.get('enabled', False)
+        pf_max_drawdown_pct = pf.get('max_drawdown_percent', 10.0)
+        pf_daily_loss_pct = pf.get('daily_loss_percent', 5.0)
+        phase = pf.get('phase', 1)
+        pf_target_pct = pf.get(f'phase{phase}_target_percent', 10.0)
+        day_indices = backtest_arrays.get('day_indices', np.empty(0, dtype=np.int64))
 
         # Run Numba-compiled loop
         results = run_backtest_loop(
@@ -253,16 +333,36 @@ class FastBacktestEngine:
             taker_fee=taker_fee,
             slippage=slippage,
             max_positions=max_positions,
+            pf_enabled=pf_enabled,
+            pf_max_drawdown_pct=pf_max_drawdown_pct,
+            pf_daily_loss_pct=pf_daily_loss_pct,
+            pf_target_pct=pf_target_pct,
+            day_indices=day_indices,
         )
 
         (equity_curve, trade_pnls, trade_entries, trade_exits,
          trade_directions, trade_entry_prices, trade_exit_prices,
-         num_trades) = results
+         num_trades, pf_breach_bar, pf_breach_type, pf_target_bar,
+         pf_daily_loss_breach_count) = results
 
         # Calculate metrics
         metrics = self._calculate_metrics(
             equity_curve, trade_pnls, initial_capital
         )
+
+        # Prop firm results
+        pf_kwargs = {}
+        if pf_enabled:
+            dd_from_initial = (np.min(equity_curve) - initial_capital) / initial_capital * 100.0
+            pf_kwargs = {
+                'prop_firm_compliant': pf_breach_bar == -1,
+                'prop_firm_breach_bar': int(pf_breach_bar) if pf_breach_bar >= 0 else None,
+                'prop_firm_breach_type': int(pf_breach_type) if pf_breach_type > 0 else None,
+                'prop_firm_target_bar': int(pf_target_bar) if pf_target_bar >= 0 else None,
+                'prop_firm_target_reached': pf_target_bar >= 0,
+                'prop_firm_daily_loss_breach_count': int(pf_daily_loss_breach_count),
+                'prop_firm_max_dd_from_initial': round(float(dd_from_initial), 2),
+            }
 
         return BacktestResults(
             equity_curve=equity_curve,
@@ -271,6 +371,7 @@ class FastBacktestEngine:
             trade_exits=trade_exits,
             trade_directions=trade_directions,
             **metrics,
+            **pf_kwargs,
         )
 
     def _calculate_metrics(

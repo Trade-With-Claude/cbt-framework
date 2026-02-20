@@ -62,6 +62,13 @@ If `show`:
 ║    Maker: 0.02%                                           ║
 ║    Taker: 0.04%                                           ║
 ║    Slippage: 0.01%                                        ║
+╠═══════════════════════════════════════════════════════════╣
+║  Prop Firm (if enabled)                                   ║
+║    Phase: 1                                               ║
+║    Max Drawdown: 10.0%                                    ║
+║    Daily Loss Limit: 5.0%                                 ║
+║    Profit Target: 10.0%                                   ║
+║    Breach Action: halt                                    ║
 ╚═══════════════════════════════════════════════════════════╝
 ```
 
@@ -108,6 +115,30 @@ leverage:
 fees:
   maker: 0.1
   taker: 0.1
+```
+
+### prop_firm_phase1
+```yaml
+prop_firm:
+  enabled: true
+  phase: 1
+  max_drawdown_percent: 10.0
+  daily_loss_percent: 5.0
+  phase1_target_percent: 10.0
+  phase2_target_percent: 5.0
+  breach_action: halt
+```
+
+### prop_firm_phase2
+```yaml
+prop_firm:
+  enabled: true
+  phase: 2
+  max_drawdown_percent: 10.0
+  daily_loss_percent: 5.0
+  phase1_target_percent: 10.0
+  phase2_target_percent: 5.0
+  breach_action: halt
 ```
 
 Load preset and merge with current config.
@@ -162,6 +193,16 @@ Walk through configuration sections using AskUserQuestion:
 ### Step 6: Time Range
 - Backtest start date? (or full history)
 - Backtest end date? (or latest)
+
+### Step 7: Prop Firm Rules
+- "Is this a prop firm challenge?" (yes / no)
+- If yes:
+  - Show current prop firm rules from config.yaml
+  - Phase? (1 / 2)
+  - Max drawdown limit? (default: 10%)
+  - Daily loss limit? (default: 5%)
+  - Confirm or edit values
+  - Update config.yaml `prop_firm` section and state.yaml `prop_firm` section
 
 ## 6. Save Config
 

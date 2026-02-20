@@ -115,6 +115,16 @@ Generate and run a Python script that performs:
 - Duration distribution for wins vs losses
 - Save: `plots/deep_analyze/duration_vs_pnl.png`
 
+### 3k. Prop Firm Compliance (conditional: only if prop_firm.enabled in config.yaml)
+
+Read config.yaml to check `prop_firm.enabled`. If true:
+
+- **Equity curve with drawdown limit line**: Plot equity curve with a horizontal line at initial_capital * (1 - max_drawdown_pct/100) showing the max drawdown limit. Mark daily loss breach bars with red markers.
+- **Monte Carlo probability of breach**: Using the existing Monte Carlo simulation (3h), calculate probability of hitting max drawdown or daily loss limit across 1000 simulated paths.
+- **Days at risk analysis**: For each trading day, calculate how close equity came to the daily loss limit. Heatmap of daily risk exposure.
+- **Phase target progress curve**: Plot cumulative return vs time with horizontal line at target (10% or 5%). Mark when/if target was reached.
+- Save: `plots/deep_analyze/prop_firm_compliance.png`
+
 ## 4. Generate DEEP_ANALYSIS.md
 
 ```markdown
@@ -226,6 +236,18 @@ Generate and run a Python script that performs:
 
 ![Duration vs PnL](plots/deep_analyze/duration_vs_pnl.png)
 
+{If prop_firm.enabled:}
+### Prop Firm Compliance
+{Compliance assessment}
+- **Overall Compliance:** {PASS / FAIL}
+- Max drawdown from initial: {pct}% (limit: {limit}%)
+- Daily loss breaches: {count} days
+- Target reached: {Yes (bar X / date Y) / No}
+- Monte Carlo P(breach): {pct}%
+- Days at highest risk: {list}
+
+![Prop Firm Compliance](plots/deep_analyze/prop_firm_compliance.png)
+
 ---
 
 ## Actionable Recommendations
@@ -302,7 +324,7 @@ plt.rcParams['figure.dpi'] = 150
 </constraints>
 
 <success_criteria>
-- [ ] All 10 analysis sections completed
+- [ ] All analysis sections completed (10 core + prop firm if enabled)
 - [ ] Plots saved to plots/deep_analyze/
 - [ ] DEEP_ANALYSIS.md created with all sections
 - [ ] Statistical tests included with proper interpretation

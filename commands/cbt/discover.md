@@ -83,6 +83,29 @@ Ask questions in groups (2-3 at a time max). Use AskUserQuestion tool.
   "Your dataset is {size}. The fast engine (Polars + NumPy + Numba) would give significant speedups. Want to switch?"
 - If user agrees, update state.yaml `engine: fast` and config.yaml `engine.type: fast`
 
+### Group 7: Account Type & Rules
+- "Is this for a prop firm challenge or a personal account?" → Options:
+  - **Personal account** - No external rules, standard backtest
+  - **Prop firm challenge** - Enforces drawdown limits, daily loss limits, profit targets
+- If **Prop firm challenge**:
+  - "Which phase?" → Options:
+    - **Phase 1** - 10% profit target
+    - **Phase 2** - 5% profit target
+  - "Confirm default rules or customize?" → Options:
+    - **Default rules** - 10% max drawdown, 5% daily loss limit
+    - **Custom rules** - Specify your own limits
+  - If custom: ask for max drawdown %, daily loss %, and profit target %
+
+**Prop firm config logic:**
+- If prop firm selected, update config.yaml:
+  - `prop_firm.enabled: true`
+  - `prop_firm.phase: {1|2}`
+  - `prop_firm.max_drawdown_percent: {value}`
+  - `prop_firm.daily_loss_percent: {value}`
+- Update state.yaml:
+  - `prop_firm.enabled: true`
+  - `prop_firm.account_type: prop_firm`
+
 ## 4. Assess Complexity
 
 Based on answers, determine build complexity:
@@ -193,6 +216,21 @@ Create comprehensive document:
 - [ ] Win Rate > {percentage}
 - [ ] {other criteria}
 
+## Account Rules
+
+**Account Type:** {personal / prop_firm}
+
+{If prop firm:}
+| Rule | Value |
+|------|-------|
+| Phase | {1 / 2} |
+| Max Drawdown (from initial) | {pct}% |
+| Daily Loss Limit (from prev day) | {pct}% |
+| Profit Target | {pct}% |
+| Breach Action | Halt trading |
+
+---
+
 ## Kill Criteria
 
 Abandon strategy if:
@@ -283,8 +321,8 @@ Next: /cbt:eda (recommended) or /cbt:research
 </constraints>
 
 <success_criteria>
-- [ ] All question groups answered (including Group 6: Data Scale)
-- [ ] DISCOVERY.md created with all sections (including engine + project_type)
+- [ ] All question groups answered (including Group 6: Data Scale, Group 7: Account Type)
+- [ ] DISCOVERY.md created with all sections (including engine + project_type + account rules)
 - [ ] Build plan generated based on complexity
 - [ ] Data requirements documented with scale estimate
 - [ ] Engine recommendation made if applicable

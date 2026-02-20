@@ -111,6 +111,15 @@ results:
   consecutive_wins: 8
   consecutive_losses: 5
 
+prop_firm:  # only if prop_firm.enabled
+  compliant: true
+  max_dd_from_initial: -3.45
+  daily_loss_breaches: 0
+  target_reached: true
+  target_bar: 1234
+  breach_bar: null
+  breach_reason: null
+
 equity_curve_file: "trades/equity_{exp_id}.csv"
 trades_file: "trades/trades_{exp_id}.csv"
 ```
@@ -153,6 +162,14 @@ experiments:
 ║  Total:            143             Avg Duration:    4h 23m            ║
 ║  Avg Winner:       +1.23%          Largest Winner:  +5.67%            ║
 ║  Avg Loser:        -0.89%          Largest Loser:   -3.21%            ║
+║                                                                       ║
+╠═══════════════════════════════════════════════════════════════════════╣
+║  Prop Firm Compliance (if enabled)                                    ║
+║  ────────────────────────────────────────────────────────────────     ║
+║  Status:            PASS / FAIL                                       ║
+║  Max DD (initial):  -X.XX%         Limit: -10.0%                      ║
+║  Daily Loss:        X breaches     Limit: -5.0%                       ║
+║  Target Reached:    Yes (bar X)  / No                                 ║
 ║                                                                       ║
 ╠═══════════════════════════════════════════════════════════════════════╣
 ║  Comparison                         exp_003    baseline    best       ║

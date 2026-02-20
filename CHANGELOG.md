@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-02-20
+
+### Added
+
+- **Prop Firm Challenge Mode** - Full enforcement of prop firm rules in backtests:
+  - 10% max drawdown from initial capital (fixed, not trailing)
+  - 5% daily loss limit from previous day's closing equity
+  - Phase 1 (10% target) and Phase 2 (5% target) support
+  - Configurable limits for custom prop firm rules
+  - `breach_action: halt` - auto-closes positions and stops trading on breach
+
+- **Prop Firm in Backtest Engines:**
+  - `backtest.py` (pandas): Day detection from timestamps, drawdown/daily loss checks after each bar, halt-on-breach with forced position close
+  - `fast/backtest.py` (Numba): `day_indices` array for day boundaries, breach tracking in JIT loop, returns breach bar/type/target info
+
+- **Prop Firm Metrics** (`metrics.py`):
+  - `calculate_prop_firm_metrics()` - Fixed drawdown from initial capital, daily loss per day, breach detection (bar + rule), compliance percentage, target reached tracking
+
+- **Prop Firm in Commands:**
+  - `/cbt:discover` - Group 7: Account Type & Rules (personal vs prop firm, phase, custom limits)
+  - `/cbt:config` - `prop_firm_phase1` and `prop_firm_phase2` presets, interactive Step 7 for prop firm rules
+  - `/cbt:eda` - Conditional "Prop Firm Risk Assessment" section (daily return vs 5% limit, max adverse excursion vs 10% drawdown, sizing recommendation)
+  - `/cbt:deep-analyze` - Section 3k: Prop Firm Compliance (equity curve with limit lines, Monte Carlo breach probability, days at risk, target progress)
+  - `/cbt:run` - PASS/FAIL compliance output, max DD from initial, daily loss breaches, target reached
+
+### Changed
+
+- `config.yaml` template now includes `prop_firm:` section (disabled by default)
+- `state.yaml` template now includes `prop_firm:` tracking
+- `BacktestResults` dataclass extended with prop firm fields (both engines)
+
+---
+
 ## [1.2.0] - 2026-02-20
 
 ### Added

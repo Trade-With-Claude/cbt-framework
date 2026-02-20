@@ -150,6 +150,47 @@ Based on DISCOVERY.md entry conditions, compute and visualize:
 - Concept drift indicators
 - Save: `plots/eda/train_test_comparison.png`
 
+## 5b. Prop Firm Risk Assessment (if prop_firm.enabled in config.yaml)
+
+If `prop_firm.enabled` is true in config.yaml, add this conditional section to the EDA:
+
+### 5b-i. Daily Return Distribution vs Daily Loss Limit
+- Calculate daily returns from the raw data
+- Plot daily return distribution (Seaborn histplot + kdeplot)
+- Draw vertical line at -5% (daily loss limit) and shade the breach zone
+- Calculate probability of daily return exceeding the daily loss limit
+- Save: `plots/eda/prop_firm_daily_loss_risk.png`
+
+### 5b-ii. Max Adverse Excursion Analysis
+- Calculate rolling drawdowns from peaks over various windows
+- Compare rolling drawdown distribution against 10% max drawdown limit
+- Estimate probability of hitting max drawdown limit based on historical volatility
+- Save: `plots/eda/prop_firm_drawdown_risk.png`
+
+### 5b-iii. Prop Firm Volatility Sizing Assessment
+- Given the prop firm limits, calculate maximum safe position size
+- Show risk-of-ruin analysis at different sizing levels
+- Recommend conservative sizing that keeps P(breach) < 5%
+- Save: `plots/eda/prop_firm_sizing_risk.png`
+
+Add to EDA.md report under a new section:
+```markdown
+## Prop Firm Risk Assessment
+
+### Daily Loss Risk
+- Probability of daily loss exceeding {daily_loss_pct}%: {pct}%
+- Worst historical daily return: {value}%
+- Days exceeding limit in raw data: {count}
+
+### Drawdown Risk
+- Probability of drawdown exceeding {max_drawdown_pct}%: {pct}%
+- Historical max drawdown: {value}%
+- Estimated safe position sizing: {pct}% per trade
+
+### Recommendation
+{Data-driven recommendation on sizing/risk for prop firm compliance}
+```
+
 ## 6. Generate EDA Script
 
 Write a self-contained Python script `eda_analysis.py` that:

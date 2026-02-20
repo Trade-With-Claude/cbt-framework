@@ -259,6 +259,136 @@ def calculate_trade_stats(trades: List[Trade]) -> Dict[str, Any]:
     }
 
 
+def calculate_prop_firm_metrics(
+    equity_curve: List[float],
+    initial_capital: float,
+    timestamps: Optional[List[Any]] = None,
+    max_drawdown_percent: float = 10.0,
+    daily_loss_percent: float = 5.0,
+    target_percent: float = 10.0,
+) -> Dict[str, Any]:
+    """
+    Calculate prop firm challenge compliance metrics.
+
+    Tracks:
+    - Max drawdown from initial capital (fixed, not trailing)
+    - Daily loss from previous day's closing equity
+    - Phase target reached (bar index / timestamp)
+    - Breach detection (which bar, which rule)
+
+    Args:
+        equity_curve: List of equity values at each bar
+        initial_capital: Starting capital
+        timestamps: Optional list of bar timestamps (for day detection)
+        max_drawdown_percent: Max allowed drawdown from initial capital
+        daily_loss_percent: Max allowed daily loss from prev day equity
+        target_percent: Profit target percentage
+
+    Returns:
+        Dictionary of prop firm metrics
+    """
+    if not equity_curve:
+        return {
+            'compliant': False,
+            'max_drawdown_from_initial': 0.0,
+            'max_drawdown_limit': max_drawdown_percent,
+            'drawdown_breached': False,
+            'drawdown_breach_bar': None,
+            'daily_loss_breaches': 0,
+            'daily_loss_breach_bars': [],
+            'worst_daily_loss': 0.0,
+            'daily_loss_limit': daily_loss_percent,
+            'target_reached': False,
+            'target_bar': None,
+            'target_percent': target_percent,
+            'compliance_percent': 0.0,
+        }
+
+    equity = np.array(equity_curve, dtype=np.float64)
+    n = len(equity)
+
+    # --- Max drawdown from initial capital (fixed) ---
+    drawdown_from_initial = (equity - initial_capital) / initial_capital * 100
+    max_dd_from_initial = float(drawdown_from_initial.min())
+
+    drawdown_breached = max_dd_from_initial <= -max_drawdown_percent
+    drawdown_breach_bar = None
+    if drawdown_breached:
+        breach_idx = np.where(drawdown_from_initial <= -max_drawdown_percent)[0]
+        drawdown_breach_bar = int(breach_idx[0])
+
+    # --- Daily loss tracking ---
+    daily_loss_breaches = 0
+    daily_loss_breach_bars = []
+    worst_daily_loss = 0.0
+
+    if timestamps is not None and len(timestamps) == n:
+        # Convert timestamps to detect day boundaries
+        ts_series = pd.Series(timestamps)
+        try:
+            ts_dates = pd.to_datetime(ts_series).dt.date
+        except Exception:
+            ts_dates = None
+
+        if ts_dates is not None:
+            prev_day_equity = initial_capital
+            current_day = ts_dates.iloc[0]
+
+            for i in range(n):
+                bar_date = ts_dates.iloc[i]
+
+                # New day detected
+                if bar_date != current_day:
+                    prev_day_equity = equity[i - 1]
+                    current_day = bar_date
+
+                # Check daily loss from previous day equity
+                if prev_day_equity > 0:
+                    daily_drawdown = (equity[i] - prev_day_equity) / prev_day_equity * 100
+                    if daily_drawdown < worst_daily_loss:
+                        worst_daily_loss = daily_drawdown
+                    if daily_drawdown <= -daily_loss_percent:
+                        daily_loss_breaches += 1
+                        daily_loss_breach_bars.append(i)
+    else:
+        # No timestamps - skip daily loss tracking
+        pass
+
+    # --- Target reached ---
+    profit_pct = (equity - initial_capital) / initial_capital * 100
+    target_reached = bool(np.any(profit_pct >= target_percent))
+    target_bar = None
+    if target_reached:
+        target_bar = int(np.where(profit_pct >= target_percent)[0][0])
+
+    # --- Compliance ---
+    compliant = not drawdown_breached and daily_loss_breaches == 0
+
+    # Compliance percentage: fraction of bars without any breach
+    bars_in_breach = 0
+    if drawdown_breach_bar is not None:
+        bars_in_breach = max(bars_in_breach, n - drawdown_breach_bar)
+    # Daily loss breach bars count individually
+    bars_in_breach = max(bars_in_breach, len(set(daily_loss_breach_bars)))
+    compliance_percent = round((1 - bars_in_breach / n) * 100, 2) if n > 0 else 0.0
+
+    return {
+        'compliant': compliant,
+        'max_drawdown_from_initial': round(max_dd_from_initial, 2),
+        'max_drawdown_limit': max_drawdown_percent,
+        'drawdown_breached': drawdown_breached,
+        'drawdown_breach_bar': drawdown_breach_bar,
+        'daily_loss_breaches': daily_loss_breaches,
+        'daily_loss_breach_bars': daily_loss_breach_bars,
+        'worst_daily_loss': round(worst_daily_loss, 2),
+        'daily_loss_limit': daily_loss_percent,
+        'target_reached': target_reached,
+        'target_bar': target_bar,
+        'target_percent': target_percent,
+        'compliance_percent': compliance_percent,
+    }
+
+
 def calculate_all_metrics(equity_curve: List[float],
                          trades: List[Trade],
                          initial_capital: float,

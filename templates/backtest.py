@@ -72,6 +72,15 @@ class BacktestResults:
     calmar_ratio: float
     avg_drawdown: float
 
+    # Prop firm metrics (None if not enabled)
+    prop_firm_compliant: Optional[bool] = None
+    prop_firm_max_dd_from_initial: Optional[float] = None
+    prop_firm_daily_loss_breaches: Optional[int] = None
+    prop_firm_breach_bar: Optional[int] = None
+    prop_firm_breach_reason: Optional[str] = None
+    prop_firm_target_reached: Optional[bool] = None
+    prop_firm_target_bar: Optional[int] = None
+
 
 class BacktestEngine:
     """
@@ -105,6 +114,30 @@ class BacktestEngine:
         self.maker_fee = config['fees']['maker'] / 100
         self.taker_fee = config['fees']['taker'] / 100
         self.slippage = config['fees']['slippage'] / 100
+
+        # Prop firm challenge tracking
+        pf = config.get('prop_firm', {})
+        self.prop_firm_enabled = pf.get('enabled', False)
+        if self.prop_firm_enabled:
+            self.pf_max_drawdown_pct = pf.get('max_drawdown_percent', 10.0)
+            self.pf_daily_loss_pct = pf.get('daily_loss_percent', 5.0)
+            phase = pf.get('phase', 1)
+            self.pf_target_pct = pf.get(f'phase{phase}_target_percent', 10.0)
+            self.pf_breach_action = pf.get('breach_action', 'halt')
+        else:
+            self.pf_max_drawdown_pct = 10.0
+            self.pf_daily_loss_pct = 5.0
+            self.pf_target_pct = 10.0
+            self.pf_breach_action = 'halt'
+
+        # Prop firm runtime state
+        self.pf_halted = False
+        self.pf_breach_bar = None
+        self.pf_breach_reason = None
+        self.pf_prev_day_equity = self.initial_capital
+        self.pf_current_day = None
+        self.pf_daily_loss_breach_bars = []
+        self.pf_target_bar = None
 
     def calculate_fees(self, price: float, size: float, order_type: str = 'taker') -> float:
         """Calculate trading fees."""
@@ -208,17 +241,37 @@ class BacktestEngine:
             timestamp = features.index[idx]
             current_price = current[price_col]
 
+            # --- Prop firm: detect new day and update prev day equity ---
+            if self.prop_firm_enabled:
+                try:
+                    bar_date = pd.Timestamp(timestamp).date()
+                except Exception:
+                    bar_date = None
+
+                if bar_date is not None:
+                    if self.pf_current_day is None:
+                        self.pf_current_day = bar_date
+                    elif bar_date != self.pf_current_day:
+                        # New day: snapshot previous day's closing equity
+                        self.pf_prev_day_equity = self.equity_curve[-1] if self.equity_curve else self.equity
+                        self.pf_current_day = bar_date
+
             # Check exits first
             if self.position is not None:
-                exit_reason = self.strategy.check_exit(
-                    self.position, current_price, idx
-                )
-                if exit_reason:
-                    self.close_position(self.position, timestamp, current_price, exit_reason)
+                # Prop firm breach: force close position
+                if self.prop_firm_enabled and self.pf_halted:
+                    self.close_position(self.position, timestamp, current_price, 'prop_firm_breach')
                     self.position = None
+                else:
+                    exit_reason = self.strategy.check_exit(
+                        self.position, current_price, idx
+                    )
+                    if exit_reason:
+                        self.close_position(self.position, timestamp, current_price, exit_reason)
+                        self.position = None
 
-            # Check entries
-            if self.position is None:
+            # Check entries (skip if prop firm halted)
+            if self.position is None and not (self.prop_firm_enabled and self.pf_halted):
                 signal = self.strategy.get_signal(idx)
 
                 if signal.direction != 0:
@@ -236,8 +289,7 @@ class BacktestEngine:
                             timestamp, current_price, signal.direction, size
                         )
 
-            # Record equity
-            # Mark-to-market if position open
+            # Record equity (mark-to-market if position open)
             if self.position:
                 if self.position.direction == 1:
                     unrealized = (current_price - self.position.entry_price) * self.position.size
@@ -246,6 +298,33 @@ class BacktestEngine:
                 self.equity_curve.append(self.equity + unrealized)
             else:
                 self.equity_curve.append(self.equity)
+
+            # --- Prop firm: check drawdown and daily loss after equity update ---
+            if self.prop_firm_enabled and not self.pf_halted:
+                current_equity = self.equity_curve[-1]
+
+                # Check max drawdown from initial capital
+                dd_from_initial = (current_equity - self.initial_capital) / self.initial_capital * 100
+                if dd_from_initial <= -self.pf_max_drawdown_pct:
+                    self.pf_halted = True
+                    self.pf_breach_bar = idx
+                    self.pf_breach_reason = f'max_drawdown ({dd_from_initial:.2f}% <= -{self.pf_max_drawdown_pct}%)'
+
+                # Check daily loss from previous day equity
+                if self.pf_prev_day_equity > 0:
+                    daily_loss = (current_equity - self.pf_prev_day_equity) / self.pf_prev_day_equity * 100
+                    if daily_loss <= -self.pf_daily_loss_pct:
+                        self.pf_daily_loss_breach_bars.append(idx)
+                        if not self.pf_halted:
+                            self.pf_halted = True
+                            self.pf_breach_bar = idx
+                            self.pf_breach_reason = f'daily_loss ({daily_loss:.2f}% <= -{self.pf_daily_loss_pct}%)'
+
+                # Check target reached
+                if self.pf_target_bar is None:
+                    profit_pct = (current_equity - self.initial_capital) / self.initial_capital * 100
+                    if profit_pct >= self.pf_target_pct:
+                        self.pf_target_bar = idx
 
         # Close any remaining position
         if self.position is not None:
@@ -335,6 +414,26 @@ class BacktestEngine:
         # Average drawdown
         avg_drawdown = drawdown[drawdown < 0].mean() if (drawdown < 0).any() else 0
 
+        # Prop firm metrics
+        pf_compliant = None
+        pf_max_dd = None
+        pf_daily_breaches = None
+        pf_breach_bar = None
+        pf_breach_reason = None
+        pf_target_reached = None
+        pf_target_bar = None
+
+        if self.prop_firm_enabled:
+            equity_arr = equity_series.values
+            dd_from_initial = (equity_arr - self.initial_capital) / self.initial_capital * 100
+            pf_max_dd = round(float(dd_from_initial.min()), 2)
+            pf_daily_breaches = len(self.pf_daily_loss_breach_bars)
+            pf_breach_bar = self.pf_breach_bar
+            pf_breach_reason = self.pf_breach_reason
+            pf_target_reached = self.pf_target_bar is not None
+            pf_target_bar = self.pf_target_bar
+            pf_compliant = not self.pf_halted
+
         return BacktestResults(
             strategy_name=self.strategy.config.get('strategy_name', 'unnamed'),
             start_date=str(features.index[0]),
@@ -360,7 +459,14 @@ class BacktestEngine:
             max_consecutive_wins=max_consecutive_wins,
             max_consecutive_losses=max_consecutive_losses,
             calmar_ratio=round(calmar, 2),
-            avg_drawdown=round(avg_drawdown, 2)
+            avg_drawdown=round(avg_drawdown, 2),
+            prop_firm_compliant=pf_compliant,
+            prop_firm_max_dd_from_initial=pf_max_dd,
+            prop_firm_daily_loss_breaches=pf_daily_breaches,
+            prop_firm_breach_bar=pf_breach_bar,
+            prop_firm_breach_reason=pf_breach_reason,
+            prop_firm_target_reached=pf_target_reached,
+            prop_firm_target_bar=pf_target_bar,
         )
 
     def _max_consecutive(self, outcomes: List[int], target: int) -> int:
@@ -438,6 +544,19 @@ def main():
     print(f"  Profit Factor: {results.profit_factor:.2f}")
     print(f"  Avg Winner:    ${results.avg_winner:.2f}")
     print(f"  Avg Loser:     ${results.avg_loser:.2f}")
+
+    if results.prop_firm_compliant is not None:
+        status = "PASS" if results.prop_firm_compliant else "FAIL"
+        print(f"\nProp Firm Compliance: {status}")
+        print(f"  Max DD from initial: {results.prop_firm_max_dd_from_initial:.2f}%")
+        print(f"  Daily loss breaches: {results.prop_firm_daily_loss_breaches}")
+        target_str = "Yes" if results.prop_firm_target_reached else "No"
+        if results.prop_firm_target_bar is not None:
+            target_str += f" (bar {results.prop_firm_target_bar})"
+        print(f"  Target reached:      {target_str}")
+        if results.prop_firm_breach_reason:
+            print(f"  Breach reason:       {results.prop_firm_breach_reason}")
+
     print("=" * 60)
 
     # Save outputs
