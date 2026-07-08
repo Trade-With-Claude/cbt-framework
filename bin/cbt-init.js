@@ -117,7 +117,7 @@ async function setupMCP() {
 
   // --- Context7 (no API key needed) ---
   if (!mcpConfig.mcpServers.context7) {
-    log('  1/3  Context7 - Library Documentation', colors.bright);
+    log('  1/4  Context7 - Library Documentation', colors.bright);
     log('       Gives Claude access to up-to-date docs (pandas, numpy, ccxt...)', colors.dim);
     log('       Package: @upstash/context7-mcp (open source, no key needed)', colors.dim);
     log('', colors.reset);
@@ -134,13 +134,13 @@ async function setupMCP() {
     }
     log('', colors.reset);
   } else {
-    log('  1/3  Context7 - already configured', colors.dim);
+    log('  1/4  Context7 - already configured', colors.dim);
     log('', colors.reset);
   }
 
   // --- Alpha Vantage (free API key) ---
   if (!mcpConfig.mcpServers.alphavantage) {
-    log('  2/3  Alpha Vantage - Market & Macro Data', colors.bright);
+    log('  2/4  Alpha Vantage - Market & Macro Data', colors.bright);
     log('       Stocks, forex, crypto prices + macro indicators (CPI, GDP, rates)', colors.dim);
     log('       Free API key from: https://www.alphavantage.co/support/#api-key', colors.dim);
     log('', colors.reset);
@@ -161,13 +161,13 @@ async function setupMCP() {
     }
     log('', colors.reset);
   } else {
-    log('  2/3  Alpha Vantage - already configured', colors.dim);
+    log('  2/4  Alpha Vantage - already configured', colors.dim);
     log('', colors.reset);
   }
 
   // --- FRED (free API key) ---
   if (!mcpConfig.mcpServers.fred) {
-    log('  3/3  FRED - Federal Reserve Economic Data', colors.bright);
+    log('  3/4  FRED - Federal Reserve Economic Data', colors.bright);
     log('       840,000+ economic time series (GDP, CPI, M2, yield curves, etc.)', colors.dim);
     log('       Free API key from: https://fred.stlouisfed.org/docs/api/api_key.html', colors.dim);
     log('', colors.reset);
@@ -192,7 +192,32 @@ async function setupMCP() {
     }
     log('', colors.reset);
   } else {
-    log('  3/3  FRED - already configured', colors.dim);
+    log('  3/4  FRED - already configured', colors.dim);
+    log('', colors.reset);
+  }
+
+  // --- FXMacroData (optional API key) ---
+  if (!mcpConfig.mcpServers.fxmacrodata) {
+    log('  4/4  FXMacroData - FX Macro Data', colors.bright);
+    log('       FX spot rates, macro calendars, COT, commodities, and central-bank data', colors.dim);
+    log('       Optional API key from: https://fxmacrodata.com/api-management', colors.dim);
+    log('', colors.reset);
+    const answer = await askQuestion(`       ${colors.cyan}Install FXMacroData? (Y/n): ${colors.reset}`);
+    if (answer !== 'n' && answer !== 'no') {
+      const apiKey = await askQuestion(`       ${colors.cyan}Paste your FXMacroData API key (optional): ${colors.reset}`, true);
+      const trimmedKey = apiKey.trim();
+      const url = trimmedKey
+        ? `https://fxmacrodata.com/mcp?api_key=${trimmedKey}`
+        : 'https://fxmacrodata.com/mcp';
+      mcpConfig.mcpServers.fxmacrodata = { url };
+      log('       Added!', colors.green);
+      added++;
+    } else {
+      log('       Skipped.', colors.dim);
+    }
+    log('', colors.reset);
+  } else {
+    log('  4/4  FXMacroData - already configured', colors.dim);
     log('', colors.reset);
   }
 
@@ -383,7 +408,7 @@ function uninstall() {
   if (fs.existsSync(mcpPath)) {
     try {
       const mcpConfig = JSON.parse(fs.readFileSync(mcpPath, 'utf8'));
-      const cbtServers = ['context7', 'alphavantage', 'fred'];
+      const cbtServers = ['context7', 'alphavantage', 'fred', 'fxmacrodata'];
       let removed = 0;
       for (const server of cbtServers) {
         if (mcpConfig.mcpServers && mcpConfig.mcpServers[server]) {
