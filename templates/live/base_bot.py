@@ -49,6 +49,7 @@ class BaseBot(ABC):
         self.mode = mode  # 'paper' or 'live'
         self.running = True
         self.start_time = datetime.now()
+        self.symbol = None  # set by run() once trading starts
 
         # Safety parameters
         live_config = self.config.get('live', {})
@@ -111,6 +112,10 @@ class BaseBot(ABC):
             interval_seconds: Sleep between checks
         """
         logger.info(f"Starting bot: {symbol} {timeframe} [{self.mode} mode]")
+
+        # Tracked so the kill switch can close the actual traded symbol,
+        # not a placeholder the exchange client doesn't understand.
+        self.symbol = symbol
 
         if not self.connect():
             logger.error("Failed to connect to exchange")
@@ -226,9 +231,11 @@ class BaseBot(ABC):
                 f"KILL SWITCH TRIGGERED\nDrawdown: {drawdown:.1f}%\nClosing all positions",
                 level='critical'
             )
-            # Close all positions
+            # Close the open position on the traded symbol.
+            # Exchange clients expect a real symbol (e.g. 'BTC/USDT'), not
+            # the literal string 'all' - passing that silently no-ops here.
             try:
-                self.close_position('all')
+                self.close_position(self.symbol)
             except Exception as e:
                 logger.error(f"Error closing positions: {e}")
             self.running = False
