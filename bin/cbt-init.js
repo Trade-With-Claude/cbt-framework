@@ -47,6 +47,45 @@ function copyDir(src, dest) {
   }
 }
 
+// hooks/cbt-statusline.js is copied out to ~/.claude/hooks/ and later run
+// standalone by Claude Code, disconnected from this package's own
+// node_modules. Its `require('js-yaml')` would fail to resolve unless a
+// copy of js-yaml lives somewhere Node's module resolution will find by
+// walking up from ~/.claude/hooks/ (i.e. ~/.claude/node_modules/js-yaml).
+function vendorJsYaml() {
+  let entry;
+  try {
+    entry = require.resolve('js-yaml');
+  } catch (e) {
+    return false;
+  }
+
+  // Walk up from the resolved entry file to the js-yaml package root
+  // (the directory whose package.json declares name "js-yaml").
+  let dir = path.dirname(entry);
+  while (true) {
+    const pkgJsonPath = path.join(dir, 'package.json');
+    if (fs.existsSync(pkgJsonPath)) {
+      try {
+        const pkg = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'));
+        if (pkg.name === 'js-yaml') break;
+      } catch (e) {
+        // Not the package root, keep walking up
+      }
+    }
+    const parent = path.dirname(dir);
+    if (parent === dir) return false; // hit filesystem root, package.json not found
+    dir = parent;
+  }
+
+  try {
+    copyDir(dir, path.join(CLAUDE_DIR, 'node_modules', 'js-yaml'));
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 function updateSettings() {
   const settingsPath = path.join(CLAUDE_DIR, 'settings.json');
   let settings = {};
@@ -83,6 +122,18 @@ function updateSettings() {
       }]
     });
   }
+
+  // Add CBT status line (only if the user hasn't set their own)
+  const statusLineCommand = `node ${path.join(HOOKS_DIR, 'cbt-statusline.js')}`;
+  if (!settings.statusLine) {
+    settings.statusLine = {
+      type: 'command',
+      command: statusLineCommand
+    };
+  } else if (settings.statusLine.command && settings.statusLine.command.includes('cbt-statusline.js')) {
+    settings.statusLine.command = statusLineCommand;
+  }
+  // else: user already has a custom status line, leave it alone
 
   fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
 }
@@ -285,6 +336,15 @@ async function install() {
   log('    - Hooks (statusline + update check)', colors.green);
   copyDir(path.join(packageDir, 'hooks'), HOOKS_DIR);
 
+  // cbt-statusline.js needs js-yaml at runtime; vendor it alongside since
+  // the hook runs standalone, outside this package's own node_modules
+  if (vendorJsYaml()) {
+    log('    - js-yaml (statusline dependency)', colors.green);
+  } else {
+    log('    - js-yaml vendoring failed - statusline may not work.', colors.yellow);
+    log(`      Run: npm install js-yaml --prefix "${CLAUDE_DIR}"`, colors.dim);
+  }
+
   // Version file
   fs.writeFileSync(versionFile, VERSION);
 
@@ -375,6 +435,22 @@ function uninstall() {
     if (fs.existsSync(hookPath)) {
       fs.unlinkSync(hookPath);
       log(`    - Removed hooks/${hook}`, colors.dim);
+    }
+  }
+
+  // Remove CBT status line from settings.json (only if we're the ones who set it)
+  const settingsPath = path.join(CLAUDE_DIR, 'settings.json');
+  if (fs.existsSync(settingsPath)) {
+    try {
+      const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+      if (settings.statusLine && settings.statusLine.command &&
+          settings.statusLine.command.includes('cbt-statusline.js')) {
+        delete settings.statusLine;
+        fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+        log('    - Removed CBT status line from settings.json', colors.dim);
+      }
+    } catch (e) {
+      // Ignore malformed settings.json
     }
   }
 

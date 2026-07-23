@@ -28,6 +28,9 @@
   "bin": {
     "cbt-framework": "bin/cbt-init.js"
   },
+  "dependencies": {
+    "js-yaml": "^5.2.1"
+  },
   "files": [
     "bin/",
     "commands/",
