@@ -188,7 +188,7 @@ CBT Framework can set up 4 MCP servers during installation to give Claude access
 | **Context7** | Up-to-date library docs (pandas, ccxt, polars...) | None needed |
 | **Alpha Vantage** | Stocks, forex, crypto + macro indicators (CPI, GDP, rates) | [Free key](https://www.alphavantage.co/support/#api-key) |
 | **FRED** | 840,000+ economic time series from the Federal Reserve | [Free key](https://fred.stlouisfed.org/docs/api/api_key.html) |
-| **FXMacroData** | FX spot, economic calendars, COT, commodities, and central-bank data | [Optional key](https://fxmacrodata.com/api-management) |
+| **FXMacroData** | FX spot, economic calendars, COT, commodities, and central-bank data | None needed |
 
 This means Claude can pull real market data and macroeconomic indicators while building and analyzing your strategies.
 

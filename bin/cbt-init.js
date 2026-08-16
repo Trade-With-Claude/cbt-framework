@@ -196,20 +196,17 @@ async function setupMCP() {
     log('', colors.reset);
   }
 
-  // --- FXMacroData (optional API key) ---
+  // --- FXMacroData (hosted HTTP server, no key required) ---
   if (!mcpConfig.mcpServers.fxmacrodata) {
     log('  4/4  FXMacroData - FX Macro Data', colors.bright);
     log('       FX spot rates, macro calendars, COT, commodities, and central-bank data', colors.dim);
-    log('       Optional API key from: https://fxmacrodata.com/api-management', colors.dim);
+    log('       Hosted MCP server; no API key is requested or stored', colors.dim);
     log('', colors.reset);
     const answer = await askQuestion(`       ${colors.cyan}Install FXMacroData? (Y/n): ${colors.reset}`);
     if (answer !== 'n' && answer !== 'no') {
-      const apiKey = await askQuestion(`       ${colors.cyan}Paste your FXMacroData API key (optional): ${colors.reset}`, true);
-      const trimmedKey = apiKey.trim();
-      const url = trimmedKey
-        ? `https://fxmacrodata.com/mcp?api_key=${trimmedKey}`
-        : 'https://fxmacrodata.com/mcp';
-      mcpConfig.mcpServers.fxmacrodata = { url };
+      mcpConfig.mcpServers.fxmacrodata = {
+        url: 'https://mcp.fxmacrodata.com'
+      };
       log('       Added!', colors.green);
       added++;
     } else {

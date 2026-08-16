@@ -267,7 +267,7 @@ CBT Framework can install 4 MCP servers to give Claude access to external data:
 | **Context7** | Up-to-date library docs (pandas, ccxt, polars...) | None needed |
 | **Alpha Vantage** | Stocks, forex, crypto + macro data (CPI, GDP, rates) | Free at alphavantage.co |
 | **FRED** | 840,000+ economic time series from the Federal Reserve | Free at fred.stlouisfed.org |
-| **FXMacroData** | FX spot, release calendars, COT, commodities, central-bank data | Optional key at fxmacrodata.com |
+| **FXMacroData** | FX spot, release calendars, COT, commodities, central-bank data | None needed |
 
 Run `npx cbt-framework` to set them up, or edit `~/.claude/.mcp.json` manually.
 See full details: `~/.claude/cbt-framework/references/mcp-setup.md`

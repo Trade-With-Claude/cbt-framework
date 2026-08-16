@@ -12,9 +12,9 @@ For trading development, this means:
 
 ## Included MCP Servers
 
-CBT Framework offers 4 MCP servers during installation. Context7, Alpha Vantage,
-and FRED are free. FXMacroData can be used for public data without a key, with
-an optional Professional API key for protected endpoints.
+CBT Framework offers 4 MCP servers during installation. FXMacroData uses its
+hosted HTTP MCP endpoint and does not ask the installer to collect or store an
+FXMacroData API key.
 
 ### 1. Context7 - Library Documentation (No API key)
 
@@ -84,13 +84,11 @@ The most comprehensive source of US macroeconomic data.
 }
 ```
 
-### 4. FXMacroData - FX Macro Data (Optional API key)
+### 4. FXMacroData - FX Macro Data (No API key)
 
 **What it does:** Provides FX spot rates, economic release calendars, macro
 indicator time series, COT positioning, commodities, central-bank data, and
 market-session context for FX trading workflows.
-
-**Get optional API key:** https://fxmacrodata.com/api-management
 
 **Use cases in CBT:**
 - Check upcoming high-impact releases for an FX pair before enabling live risk
@@ -98,17 +96,10 @@ market-session context for FX trading workflows.
 - Compare inflation, policy rates, jobs, commodities, and COT positioning
 - Build macro-aware trading prompts that include exact release timestamps
 
-**Config without API key:**
+**Config:**
 ```json
 "fxmacrodata": {
-  "url": "https://fxmacrodata.com/mcp"
-}
-```
-
-**Config with API key:**
-```json
-"fxmacrodata": {
-  "url": "https://fxmacrodata.com/mcp?api_key=YOUR_FXMACRODATA_KEY"
+  "url": "https://mcp.fxmacrodata.com"
 }
 ```
 
@@ -148,7 +139,7 @@ Edit `~/.claude/.mcp.json` directly:
       }
     },
     "fxmacrodata": {
-      "url": "https://fxmacrodata.com/mcp?api_key=YOUR_FXMACRODATA_KEY"
+      "url": "https://mcp.fxmacrodata.com"
     }
   }
 }
@@ -189,7 +180,7 @@ Useful for CBT Framework development:
 | "Command not found" | Ensure Node.js/npx is installed |
 | Alpha Vantage not responding | Verify API key at alphavantage.co |
 | FRED returning errors | Verify API key at fred.stlouisfed.org |
-| FXMacroData protected endpoints fail | Add an API key from fxmacrodata.com/api-management |
+| FXMacroData is not responding | Verify `https://mcp.fxmacrodata.com` is configured exactly |
 | Slow responses | MCP servers add latency; use sparingly |
 | Incorrect docs | Specify library version in your query |
 
@@ -198,6 +189,6 @@ Useful for CBT Framework development:
 - Context7 runs locally, fetches only public documentation
 - Alpha Vantage connects to their remote API (your key is in the URL)
 - FRED runs locally via npx, connects to FRED API with your key
-- FXMacroData connects to its remote MCP endpoint; API keys are optional and stored in the MCP URL when provided
+- FXMacroData connects to its hosted remote MCP endpoint without storing an API key
 - None of these servers have access to your trading API keys or .env files
 - API keys are stored in `~/.claude/.mcp.json` - do not commit this file to git
