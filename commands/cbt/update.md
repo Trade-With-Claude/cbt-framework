@@ -107,13 +107,14 @@ If no `.mcp.json` exists or it's missing servers, inform the user:
 
 ```
 MCP Servers:
-CBT Framework supports 3 free MCP servers for enhanced data access:
+CBT Framework supports 4 MCP servers for enhanced data access:
 
 | Server | Purpose | Status |
 |--------|---------|--------|
 | Context7 | Library docs (pandas, ccxt...) | [Installed/Not installed] |
 | Alpha Vantage | Market data + macro (CPI, GDP) | [Installed/Not installed] |
 | FRED | 840,000+ economic time series | [Installed/Not installed] |
+| FXMacroData | FX spot, release calendars, COT, commodities | [Installed/Not installed] |
 
 To set up missing MCP servers, run this in your terminal (not in Claude):
   npx cbt-framework@latest
